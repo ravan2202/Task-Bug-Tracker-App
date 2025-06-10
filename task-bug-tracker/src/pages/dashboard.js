@@ -1,10 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect,useRef } from 'react';
+import Navbar from '@/components/NavBar';
+import { useRouter } from 'next/router';
 import { ChevronDown } from 'lucide-react';
 import TaskForm from '../components/TaskForm';
 import useTaskStore from '../stores/taskStore';
+import TaskDetail from '@/components/TaskDetail';
+import useOutsideClick from '@/hooks/useOutsideClick';
 
 export default function Dashboard() {
+
+  const router = useRouter();
   const { tasks } = useTaskStore();
+  const { setTasks } = useTaskStore();
   const { deleteTask } = useTaskStore();
 
   const [sortOrder, setSortOrder] = useState('asc');
@@ -15,6 +22,29 @@ export default function Dashboard() {
   const [typeFilter, setTypeFilter] = useState('');
   const [assigneeFilter, setAssigneeFilter] = useState('')
   const [editingTask, setEditingTask] = useState(null);
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [isTaskDetailsOpen, setIsTaskDetailsOpen] = useState(false);
+
+  useEffect(() => {
+    const username = localStorage.getItem('username');
+    const role = localStorage.getItem('role');
+
+    if (!username || role !== 'Developer') {
+      router.push('/');
+    }
+  }, []);
+
+    useEffect(() => {
+    if (typeof window !== 'undefined') {
+        const storedTasks = localStorage.getItem('tasks');
+        if (storedTasks) {
+        setTasks(JSON.parse(storedTasks));
+        }
+    }
+    }, []);
+
+    const popoverRef = useRef();
+    useOutsideClick(popoverRef, () => setActiveFilter(null));
 
   const handleSort = () => {
     setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
@@ -38,12 +68,14 @@ export default function Dashboard() {
 
   const typeOptions = ['Task', 'Bug'];
   const priorityOptions = ['High', 'Medium', 'Low'];
-  const statusOptions = ['Open', 'In Progress', 'Close'];
+  const statusOptions = ['Active','Close'];
 
   return (
-    <div className="p-4">
+    <>
+    <Navbar/>
+     <div className="p-4 m-14">
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Developer Dashboard</h1>
+        <h1 className="text-lg font-bold">Developer Workspace</h1>
         <button
         onClick={() => {
             setEditingTask(null);
@@ -53,6 +85,11 @@ export default function Dashboard() {
         >
         + Add
         </button>
+        <TaskDetail
+        isOpen={isTaskDetailsOpen}
+        onClose={() => setIsTaskDetailsOpen(false)}
+        task={selectedTask}
+        />
         <TaskForm
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -263,13 +300,31 @@ export default function Dashboard() {
                   >
                     {task.id}
                   </th>
-                  <td className="px-6 py-4">{task.title}</td>
+                  <td
+                    className="px-6 py-4 text-blue-600 cursor-pointer hover:underline"
+                    onClick={() => {
+                        setSelectedTask(task);
+                        setIsTaskDetailsOpen(true);
+                    }}
+                    >
+                    {task.title}
+                    </td>
                   <td className="px-6 py-4">{task.type}</td>
                   <td className="px-6 py-4">{task.createdAt}</td>
-                  <td className="px-6 py-4">{task.priority}</td>
+                  <td className="px-6 py-4">
+                    <span
+                        className={`inline-block px-2 py-1 rounded-full text-xs font-medium
+                        ${task.priority === 'High' ? 'bg-red-100 text-red-800' :
+                        task.priority === 'Medium' ? 'bg-orange-100 text-orange-800' :
+                        'bg-green-100 text-green-800'}
+                        `}
+                    >
+                        {task.priority}
+                    </span>
+                  </td>
                   <td className="px-6 py-4">{task.status}</td>
                   <td className="px-6 py-4">{task.assignee}</td>
-                  <td className="px-6 py-4 text-center relative">
+              <td className="px-6 py-4 text-center relative">
                 <button
                     onClick={() => {
                     setActiveFilter(task.id === activeFilter ? null : task.id);
@@ -279,25 +334,25 @@ export default function Dashboard() {
                     &#8942;
                 </button>
                 {activeFilter === task.id && (
-                    <div className="absolute right-0 mt-2 bg-white border border-gray-200 rounded shadow z-10 w-28">
+                    <div ref={popoverRef} className="absolute right-0 mt-2 bg-white border border-gray-200 rounded shadow z-10 w-28">
                     <div
                         className="p-2 text-sm font-normal cursor-pointer hover:bg-gray-100"
                         onClick={() => {
-                        setEditingTask(task); 
-                        setIsModalOpen(true); 
-                        setActiveFilter(null); 
+                        setEditingTask(task);
+                        setIsModalOpen(true);
+                        setActiveFilter(null);
                         }}
                     >
-                        Edit
+                        Update
                     </div>
                     <div
                         className="p-2 text-sm font-normal cursor-pointer hover:bg-gray-100"
                         onClick={() => {
-                        deleteTask(task.id); 
-                        setActiveFilter(null); 
+                        deleteTask(task.id);
+                        setActiveFilter(null);
                         }}
                     >
-                    Delete
+                        Delete
                     </div>
                     </div>
                 )}
@@ -309,5 +364,7 @@ export default function Dashboard() {
         </table>
       </div>
     </div>
+    </>
+   
   );
 }

@@ -47,7 +47,6 @@ export default function TaskForm({ isOpen, onClose, editingTask }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
     const taskData = {
       project,
       title,
@@ -65,6 +64,15 @@ export default function TaskForm({ isOpen, onClose, editingTask }) {
     } else {
       addTask(taskData);
     }
+
+    setProject('');
+    setTitle('');
+    setDescription('');
+    setAssignee('');
+    setPriority('');
+    setStatus('');
+    setType('');
+    setCreatedDate('');
 
     onClose();
   };
@@ -198,7 +206,7 @@ export default function TaskForm({ isOpen, onClose, editingTask }) {
           <div className="col-span-2 flex justify-end">
             <button
               type="submit"
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+              className="bg-violet-500 text-white px-4 py-2 rounded hover:bg-violet-600"
             >
               {editingTask ? 'Update' : 'Create'}
             </button>
