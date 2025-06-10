@@ -1,40 +1,20 @@
 import React, { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
-import AddTaskModal from '../components/TaskForm';
+import TaskForm from '../components/TaskForm';
+import useTaskStore from '../stores/taskStore';
 
 export default function Dashboard() {
-  const tasks = [
-    {
-      id: 1,
-      name: 'Fix login bug',
-      createdAt: '2025-06-09',
-      priority: 'High',
-      status: 'Open',
-      assignee: 'John Doe',
-    },
-    {
-      id: 2,
-      name: 'Add dark mode',
-      createdAt: '2025-06-08',
-      priority: 'Medium',
-      status: 'In Progress',
-      assignee: 'Jane Smith',
-    },
-    {
-      id: 3,
-      name: 'Update dependencies',
-      createdAt: '2025-06-07',
-      priority: 'Low',
-      status: 'Close',
-      assignee: 'Bob Brown',
-    },
-  ];
+  const { tasks } = useTaskStore();
+  const { deleteTask } = useTaskStore();
 
   const [sortOrder, setSortOrder] = useState('asc');
   const [priorityFilter, setPriorityFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [activeFilter, setActiveFilter] = useState(null); 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [typeFilter, setTypeFilter] = useState('');
+  const [assigneeFilter, setAssigneeFilter] = useState('')
+  const [editingTask, setEditingTask] = useState(null);
 
   const handleSort = () => {
     setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
@@ -43,7 +23,9 @@ export default function Dashboard() {
   const filteredTasks = tasks.filter((task) => {
     return (
       (priorityFilter === '' || task.priority === priorityFilter) &&
-      (statusFilter === '' || task.status === statusFilter)
+      (statusFilter === '' || task.status === statusFilter)&&
+       (typeFilter === '' || task.type === typeFilter)&&
+       (assigneeFilter === '' || task.assignee === assigneeFilter)
     );
   });
 
@@ -54,6 +36,7 @@ export default function Dashboard() {
     return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
   });
 
+  const typeOptions = ['Task', 'Bug'];
   const priorityOptions = ['High', 'Medium', 'Low'];
   const statusOptions = ['Open', 'In Progress', 'Close'];
 
@@ -61,19 +44,65 @@ export default function Dashboard() {
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Developer Dashboard</h1>
-        <button onClick={() => setIsModalOpen(true)} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">+ Add</button>
-    <AddTaskModal
-      isOpen={isModalOpen}
-      onClose={() => setIsModalOpen(false)}
-      onCreate={(newTask) => console.log(newTask)} // handle the new task creation
-    />
+        <button
+        onClick={() => {
+            setEditingTask(null);
+            setIsModalOpen(true);
+        }}
+        className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+        >
+        + Add
+        </button>
+        <TaskForm
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        editingTask={editingTask} 
+        />
       </div>
       <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
         <table className="w-full text-sm text-left text-gray-500 bg-white">
           <thead className="text-xs text-gray-700 uppercase bg-gray-50">
             <tr>
               <th scope="col" className="px-6 py-3">Unique ID</th>
-              <th scope="col" className="px-6 py-3">Task Name</th>
+              <th scope="col" className="px-6 py-3">Title</th>
+              <th scope="col" className="px-6 py-3 relative">
+                Type
+                <button
+                    onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveFilter((prev) => (prev === 'type' ? null : 'type'));
+                    }}
+                    className="ml-1 inline-flex items-center text-gray-500 hover:text-gray-800"
+                >
+                    <ChevronDown size={14} />
+                </button>
+                {activeFilter === 'type' && (
+                    <div className="absolute right-0 mt-2 bg-white border border-gray-200 rounded shadow z-10 w-32">
+                    <div
+                        className="p-2 text-sm font-normal cursor-pointer hover:bg-gray-100"
+                        onClick={() => {
+                        setTypeFilter('');
+                        setActiveFilter(null);
+                        }}
+                    >
+                        All
+                    </div>
+                    {typeOptions.map((option) => (
+                        <div
+                        key={option}
+                        className="p-2 text-sm font-normal cursor-pointer hover:bg-gray-100"
+                        onClick={() => {
+                            setTypeFilter(option);
+                            setActiveFilter(null);
+                        }}
+                        >
+                        {option}
+                        </div>
+                    ))}
+                    </div>
+                )}
+              </th>
+
               <th
                 scope="col"
                 className="px-6 py-3 cursor-pointer"
@@ -82,7 +111,6 @@ export default function Dashboard() {
                 Created Date {sortOrder === 'asc' ? '▲' : '▼'}
               </th>
 
-              {/* Priority Filter */}
               <th scope="col" className="px-6 py-3 relative">
                 Priority
                 <button
@@ -127,7 +155,6 @@ export default function Dashboard() {
                 )}
               </th>
 
-              {/* Status Filter */}
               <th scope="col" className="px-6 py-3 relative">
                 Status
                 <button
@@ -188,7 +215,7 @@ export default function Dashboard() {
                   <div
                     className="p-2 text-sm font-normal cursor-pointer hover:bg-gray-100"
                     onClick={() => {
-                      setStatusFilter('');
+                      setAssigneeFilter('');
                       setActiveFilter(null);
                     }}
                   >
@@ -199,7 +226,7 @@ export default function Dashboard() {
                       key={assignee}
                       className="p-2 text-sm font-normal cursor-pointer hover:bg-gray-100"
                       onClick={() => {
-                        setStatusFilter(assignee);
+                        setAssigneeFilter(assignee);
                         setActiveFilter(null);
                       }}
                     >
@@ -236,43 +263,45 @@ export default function Dashboard() {
                   >
                     {task.id}
                   </th>
-                  <td className="px-6 py-4">{task.name}</td>
+                  <td className="px-6 py-4">{task.title}</td>
+                  <td className="px-6 py-4">{task.type}</td>
                   <td className="px-6 py-4">{task.createdAt}</td>
                   <td className="px-6 py-4">{task.priority}</td>
                   <td className="px-6 py-4">{task.status}</td>
                   <td className="px-6 py-4">{task.assignee}</td>
                   <td className="px-6 py-4 text-center relative">
-                    <button
-                      onClick={() => {
-                        setActiveFilter(task.id === activeFilter ? null : task.id);
-                      }}
-                      className="text-gray-500 hover:text-gray-800"
+                <button
+                    onClick={() => {
+                    setActiveFilter(task.id === activeFilter ? null : task.id);
+                    }}
+                    className="text-gray-500 hover:text-gray-800"
+                >
+                    &#8942;
+                </button>
+                {activeFilter === task.id && (
+                    <div className="absolute right-0 mt-2 bg-white border border-gray-200 rounded shadow z-10 w-28">
+                    <div
+                        className="p-2 text-sm font-normal cursor-pointer hover:bg-gray-100"
+                        onClick={() => {
+                        setEditingTask(task); 
+                        setIsModalOpen(true); 
+                        setActiveFilter(null); 
+                        }}
                     >
-                      &#8942;
-                    </button>
-                    {activeFilter === task.id && (
-                      <div className="absolute right-0 mt-2 bg-white border border-gray-200 rounded shadow z-10 w-28">
-                        <div
-                          className="p-2 text-sm font-normal cursor-pointer hover:bg-gray-100"
-                          onClick={() => {
-                            console.log('Edit');
-                            setActiveFilter(null);
-                          }}
-                        >
-                          Edit
-                        </div>
-                        <div
-                          className="p-2 text-sm font-normal cursor-pointer hover:bg-gray-100"
-                          onClick={() => {
-                            console.log('Delete');
-                            setActiveFilter(null);
-                          }}
-                        >
-                          Delete
-                        </div>
-                      </div>
-                    )}
-                  </td>
+                        Edit
+                    </div>
+                    <div
+                        className="p-2 text-sm font-normal cursor-pointer hover:bg-gray-100"
+                        onClick={() => {
+                        deleteTask(task.id); 
+                        setActiveFilter(null); 
+                        }}
+                    >
+                    Delete
+                    </div>
+                    </div>
+                )}
+                </td>
                 </tr>
               ))
             )}

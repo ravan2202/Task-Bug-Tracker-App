@@ -1,29 +1,80 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import useTaskStore from '../stores/taskStore';
 
-export default function AddTaskModal({ isOpen, onClose, onCreate }) {
+export default function TaskForm({ isOpen, onClose, editingTask }) {
+  const {
+    addTask,
+    updateTask,
+    projectOptions,
+    assigneeOptions,
+    priorityOptions,
+    statusOptions,
+    typeOptions,
+  } = useTaskStore();
+
   const [project, setProject] = useState('');
   const [title, setTitle] = useState('');
-  const [type, setType] = useState('Task');
-  const [status, setStatus] = useState('Open');
-  const [assignee, setAssignee] = useState('');
-  const [createdDate, setCreatedDate] = useState('');
   const [description, setDescription] = useState('');
+  const [assignee, setAssignee] = useState('');
+  const [priority, setPriority] = useState('');
+  const [status, setStatus] = useState('');
+  const [type, setType] = useState('');
+  const [createdDate, setCreatedDate] = useState('');
+
+  useEffect(() => {
+    if (editingTask) {
+      setProject(editingTask.project);
+      setTitle(editingTask.title);
+      setDescription(editingTask.description);
+      setAssignee(editingTask.assignee);
+      setPriority(editingTask.priority);
+      setStatus(editingTask.status);
+      setType(editingTask.type);
+      setCreatedDate(editingTask.createdAt);
+    } else {
+      setProject('');
+      setTitle('');
+      setDescription('');
+      setAssignee('');
+      setPriority('');
+      setStatus('');
+      setType('');
+      setCreatedDate('');
+    }
+  }, [editingTask]);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const newTask = { project, title, type, status, assignee, createdDate, description };
-    onCreate(newTask);
+
+    const taskData = {
+      project,
+      title,
+      description,
+      assignee,
+      priority,
+      status,
+      type,
+      createdAt: createdDate,
+    };
+
+    if (editingTask) {
+      taskData.id = editingTask.id;
+      updateTask(taskData);
+    } else {
+      addTask(taskData);
+    }
+
     onClose();
   };
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50">
-      {/* Faded background */}
-      <div className="absolute inset-0 bg-black opacity-30" onClick={onClose}></div>
-
-      {/* Modal content */}
+      <div
+        className="absolute inset-0 bg-black opacity-30"
+        onClick={onClose}
+      ></div>
       <div className="relative bg-white p-6 rounded shadow-md w-96 z-50">
         <button
           onClick={onClose}
@@ -32,92 +83,109 @@ export default function AddTaskModal({ isOpen, onClose, onCreate }) {
           ✕
         </button>
 
-        <h2 className="text-lg font-bold mb-4">Add New Task</h2>
+        <h2 className="text-lg font-bold mb-4">
+          {editingTask ? 'Edit Task' : 'Add New Task'}
+        </h2>
 
-        <form onSubmit={handleSubmit} className="space-y-3">
-          {/* Row 1: Project, Title */}
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <label className="block text-sm font-medium mb-1">Project</label>
-              <select
-                value={project}
-                onChange={(e) => setProject(e.target.value)}
-                className="w-full border border-gray-300 rounded p-2"
-                required
-              >
-                <option value="">Select Project</option>
-                <option value="Project A">Project A</option>
-                <option value="Project B">Project B</option>
-              </select>
-            </div>
-            <div className="flex-1">
-              <label className="block text-sm font-medium mb-1">Title</label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="w-full border border-gray-300 rounded p-2"
-                required
-              />
-            </div>
-          </div>
-
-          {/* Row 2: Type, Status */}
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <label className="block text-sm font-medium mb-1">Type</label>
-              <select
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-                className="w-full border border-gray-300 rounded p-2"
-              >
-                <option value="Task">Task</option>
-                <option value="Bug">Bug</option>
-              </select>
-            </div>
-            <div className="flex-1">
-              <label className="block text-sm font-medium mb-1">Status</label>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                className="w-full border border-gray-300 rounded p-2"
-              >
-                <option value="Open">Open</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Done">Done</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Row 3: Assignee, Created Date */}
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <label className="block text-sm font-medium mb-1">Assignee</label>
-              <select
-                value={assignee}
-                onChange={(e) => setAssignee(e.target.value)}
-                className="w-full border border-gray-300 rounded p-2"
-                required
-              >
-                <option value="">Select Assignee</option>
-                <option value="John Doe">John Doe</option>
-                <option value="Jane Smith">Jane Smith</option>
-              </select>
-            </div>
-            <div className="flex-1">
-              <label className="block text-sm font-medium mb-1">Created Date</label>
-              <input
-                type="date"
-                value={createdDate}
-                onChange={(e) => setCreatedDate(e.target.value)}
-                className="w-full border border-gray-300 rounded p-2"
-                required
-              />
-            </div>
-          </div>
-
-          {/* Row 4: Description */}
+        <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
           <div>
+            <label className="block text-sm font-medium mb-1">Project</label>
+            <select
+              value={project}
+              onChange={(e) => setProject(e.target.value)}
+              className="w-full border border-gray-300 rounded p-2"
+              required
+            >
+              <option value="">Select</option>
+              {projectOptions.map((p) => (
+                <option key={p}>{p}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Priority</label>
+            <select
+              value={priority}
+              onChange={(e) => setPriority(e.target.value)}
+              className="w-full border border-gray-300 rounded p-2"
+              required
+            >
+              <option value="">Select</option>
+              {priorityOptions.map((p) => (
+                <option key={p}>{p}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Title</label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full border border-gray-300 rounded p-2"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Type</label>
+            <select
+              value={type}
+              onChange={(e) => setType(e.target.value)}
+              className="w-full border border-gray-300 rounded p-2"
+              required
+            >
+              <option value="">Select</option>
+              {typeOptions.map((t) => (
+                <option key={t}>{t}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Assignee</label>
+            <select
+              value={assignee}
+              onChange={(e) => setAssignee(e.target.value)}
+              className="w-full border border-gray-300 rounded p-2"
+              required
+            >
+              <option value="">Select</option>
+              {assigneeOptions.map((a) => (
+                <option key={a}>{a}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Status</label>
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              className="w-full border border-gray-300 rounded p-2"
+              required
+            >
+              <option value="">Select</option>
+              {statusOptions.map((s) => (
+                <option key={s}>{s}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="col-span-2">
+            <label className="block text-sm font-medium mb-1">Select Date</label>
+            <input
+              type="date"
+              value={createdDate}
+              onChange={(e) => setCreatedDate(e.target.value)}
+              className="w-full border border-gray-300 rounded p-2"
+              required
+            />
+          </div>
+
+          <div className="col-span-2">
             <label className="block text-sm font-medium mb-1">Description</label>
             <textarea
               value={description}
@@ -127,13 +195,12 @@ export default function AddTaskModal({ isOpen, onClose, onCreate }) {
             />
           </div>
 
-          {/* Submit button */}
-          <div className="flex justify-end">
+          <div className="col-span-2 flex justify-end">
             <button
               type="submit"
               className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
             >
-              Create
+              {editingTask ? 'Update' : 'Create'}
             </button>
           </div>
         </form>
