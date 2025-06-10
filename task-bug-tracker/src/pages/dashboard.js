@@ -1,0 +1,284 @@
+import React, { useState } from 'react';
+import { ChevronDown } from 'lucide-react';
+import AddTaskModal from '../components/TaskForm';
+
+export default function Dashboard() {
+  const tasks = [
+    {
+      id: 1,
+      name: 'Fix login bug',
+      createdAt: '2025-06-09',
+      priority: 'High',
+      status: 'Open',
+      assignee: 'John Doe',
+    },
+    {
+      id: 2,
+      name: 'Add dark mode',
+      createdAt: '2025-06-08',
+      priority: 'Medium',
+      status: 'In Progress',
+      assignee: 'Jane Smith',
+    },
+    {
+      id: 3,
+      name: 'Update dependencies',
+      createdAt: '2025-06-07',
+      priority: 'Low',
+      status: 'Close',
+      assignee: 'Bob Brown',
+    },
+  ];
+
+  const [sortOrder, setSortOrder] = useState('asc');
+  const [priorityFilter, setPriorityFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [activeFilter, setActiveFilter] = useState(null); 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleSort = () => {
+    setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+  };
+
+  const filteredTasks = tasks.filter((task) => {
+    return (
+      (priorityFilter === '' || task.priority === priorityFilter) &&
+      (statusFilter === '' || task.status === statusFilter)
+    );
+  });
+
+  const sortedTasks = [...filteredTasks].sort((a, b) => {
+    const dateA = new Date(a.createdAt);
+    const dateB = new Date(b.createdAt);
+
+    return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+  });
+
+  const priorityOptions = ['High', 'Medium', 'Low'];
+  const statusOptions = ['Open', 'In Progress', 'Close'];
+
+  return (
+    <div className="p-4">
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">Developer Dashboard</h1>
+        <button onClick={() => setIsModalOpen(true)} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">+ Add</button>
+    <AddTaskModal
+      isOpen={isModalOpen}
+      onClose={() => setIsModalOpen(false)}
+      onCreate={(newTask) => console.log(newTask)} // handle the new task creation
+    />
+      </div>
+      <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
+        <table className="w-full text-sm text-left text-gray-500 bg-white">
+          <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+            <tr>
+              <th scope="col" className="px-6 py-3">Unique ID</th>
+              <th scope="col" className="px-6 py-3">Task Name</th>
+              <th
+                scope="col"
+                className="px-6 py-3 cursor-pointer"
+                onClick={handleSort}
+              >
+                Created Date {sortOrder === 'asc' ? '▲' : '▼'}
+              </th>
+
+              {/* Priority Filter */}
+              <th scope="col" className="px-6 py-3 relative">
+                Priority
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveFilter((prev) =>
+                      prev === 'priority' ? null : 'priority'
+                    );
+                  }}
+                  className="ml-1 inline-flex items-center text-gray-500 hover:text-gray-800"
+                >
+                  <ChevronDown size={14} />
+                </button>
+                {activeFilter === 'priority' && (
+                  <div className="absolute right-0 mt-2 bg-white border border-gray-200 rounded shadow z-10 w-32">
+                    <div
+                      className="p-2 text-sm font-normal cursor-pointer hover:bg-gray-100"
+                      onClick={() => {
+                        setPriorityFilter('');
+                        setActiveFilter(null);
+                      }}
+                    >
+                      All
+                    </div>
+                    {priorityOptions.map((option) => {
+                      const lower = option.toLowerCase();
+                      const capitalized = lower.charAt(0).toUpperCase() + lower.slice(1);
+                      return (
+                        <div
+                          key={option}
+                          className="p-2 text-sm font-normal cursor-pointer hover:bg-gray-100"
+                          onClick={() => {
+                            setPriorityFilter(option);
+                            setActiveFilter(null);
+                          }}
+                        >
+                          {capitalized}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </th>
+
+              {/* Status Filter */}
+              <th scope="col" className="px-6 py-3 relative">
+                Status
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveFilter((prev) =>
+                      prev === 'status' ? null : 'status'
+                    );
+                  }}
+                  className="ml-1 inline-flex items-center text-gray-500 hover:text-gray-800"
+                >
+                  <ChevronDown size={14} />
+                </button>
+              {activeFilter === 'status' && (
+              <div className="absolute right-0 mt-2 bg-white border border-gray-200 rounded shadow z-10 w-32">
+                <div
+                  className="p-2 text-sm font-normal cursor-pointer hover:bg-gray-100"
+                  onClick={() => {
+                    setStatusFilter('');
+                    setActiveFilter(null);
+                  }}
+                >
+                  All
+                </div>
+                {statusOptions.map((option) => {
+                  const lower = option.toLowerCase();
+                  const capitalized = lower.charAt(0).toUpperCase() + lower.slice(1);
+                  return (
+                    <div
+                      key={option}
+                      className="p-2 text-sm font-normal cursor-pointer hover:bg-gray-100"
+                      onClick={() => {
+                        setStatusFilter(option);
+                        setActiveFilter(null);
+                      }}
+                    >
+                      {capitalized}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+              </th>
+
+            <th scope="col" className="px-6 py-3 relative">
+              Assignee
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveFilter((prev) => (prev === 'assignee' ? null : 'assignee'));
+                }}
+                className="ml-1 inline-flex items-center text-gray-500 hover:text-gray-800"
+              >
+                <ChevronDown size={14} />
+              </button>
+              {activeFilter === 'assignee' && (
+                <div className="absolute right-0 mt-2 bg-white border border-gray-200 rounded shadow z-10 w-32">
+                  <div
+                    className="p-2 text-sm font-normal cursor-pointer hover:bg-gray-100"
+                    onClick={() => {
+                      setStatusFilter('');
+                      setActiveFilter(null);
+                    }}
+                  >
+                    All
+                  </div>
+                  {[...new Set(tasks.map((task) => task.assignee))].map((assignee) => (
+                    <div
+                      key={assignee}
+                      className="p-2 text-sm font-normal cursor-pointer hover:bg-gray-100"
+                      onClick={() => {
+                        setStatusFilter(assignee);
+                        setActiveFilter(null);
+                      }}
+                    >
+                      {assignee}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </th>
+              <th scope="col" className="px-6 py-3">Action</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {sortedTasks.length === 0 ? (
+              <tr>
+                <td colSpan="7" className="px-6 py-4 text-center">
+                  No tasks found.
+                </td>
+              </tr>
+            ) : (
+              sortedTasks.map((task, idx) => (
+                <tr
+                  key={task.id}
+                  className={
+                    idx % 2 === 0
+                      ? 'bg-white border-b border-gray-200'
+                      : 'bg-gray-50 border-b border-gray-200'
+                  }
+                >
+                  <th
+                    scope="row"
+                    className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap"
+                  >
+                    {task.id}
+                  </th>
+                  <td className="px-6 py-4">{task.name}</td>
+                  <td className="px-6 py-4">{task.createdAt}</td>
+                  <td className="px-6 py-4">{task.priority}</td>
+                  <td className="px-6 py-4">{task.status}</td>
+                  <td className="px-6 py-4">{task.assignee}</td>
+                  <td className="px-6 py-4 text-center relative">
+                    <button
+                      onClick={() => {
+                        setActiveFilter(task.id === activeFilter ? null : task.id);
+                      }}
+                      className="text-gray-500 hover:text-gray-800"
+                    >
+                      &#8942;
+                    </button>
+                    {activeFilter === task.id && (
+                      <div className="absolute right-0 mt-2 bg-white border border-gray-200 rounded shadow z-10 w-28">
+                        <div
+                          className="p-2 text-sm font-normal cursor-pointer hover:bg-gray-100"
+                          onClick={() => {
+                            console.log('Edit');
+                            setActiveFilter(null);
+                          }}
+                        >
+                          Edit
+                        </div>
+                        <div
+                          className="p-2 text-sm font-normal cursor-pointer hover:bg-gray-100"
+                          onClick={() => {
+                            console.log('Delete');
+                            setActiveFilter(null);
+                          }}
+                        >
+                          Delete
+                        </div>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
