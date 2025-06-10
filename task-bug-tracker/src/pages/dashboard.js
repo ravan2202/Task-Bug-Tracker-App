@@ -1,18 +1,22 @@
 import React, { useState,useEffect,useRef } from 'react';
 import Navbar from '@/components/NavBar';
 import { useRouter } from 'next/router';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Clock } from 'lucide-react';
 import TaskForm from '../components/TaskForm';
 import useTaskStore from '../stores/taskStore';
 import TaskDetail from '@/components/TaskDetail';
 import useOutsideClick from '@/hooks/useOutsideClick';
+import SearchBar from '@/components/SearchBar';
+import RealTimeTimer from '@/components/RealTimeTimer';
+import { BarChart2 } from 'lucide-react';
+import Analytics from '../components/Analytics';
 
 export default function Dashboard() {
 
   const router = useRouter();
   const { tasks } = useTaskStore();
   const { setTasks } = useTaskStore();
-  const { deleteTask } = useTaskStore();
+  const { deleteTask, typeOptions, priorityOptions, statusOptions } = useTaskStore();
 
   const [sortOrder, setSortOrder] = useState('asc');
   const [priorityFilter, setPriorityFilter] = useState('');
@@ -24,6 +28,8 @@ export default function Dashboard() {
   const [editingTask, setEditingTask] = useState(null);
   const [selectedTask, setSelectedTask] = useState(null);
   const [isTaskDetailsOpen, setIsTaskDetailsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
 
   useEffect(() => {
     const username = localStorage.getItem('username');
@@ -50,14 +56,24 @@ export default function Dashboard() {
     setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
   };
 
-  const filteredTasks = tasks.filter((task) => {
-    return (
-      (priorityFilter === '' || task.priority === priorityFilter) &&
-      (statusFilter === '' || task.status === statusFilter)&&
-       (typeFilter === '' || task.type === typeFilter)&&
-       (assigneeFilter === '' || task.assignee === assigneeFilter)
-    );
-  });
+const filteredTasks = tasks.filter((task) => {
+  const lowerSearchTerm = searchTerm.toLowerCase();
+
+  const matchesSearch =
+    task.title.toLowerCase().includes(lowerSearchTerm) ||
+    (task.description && task.description.toLowerCase().includes(lowerSearchTerm)) ||
+    task.assignee.toLowerCase().includes(lowerSearchTerm) ||
+    task.project.toLowerCase().includes(lowerSearchTerm) ||
+    task.id.toString().includes(lowerSearchTerm); // 🟩 handle numeric fields
+
+  return (
+    (priorityFilter === '' || task.priority === priorityFilter) &&
+    (statusFilter === '' || task.status === statusFilter) &&
+    (typeFilter === '' || task.type === typeFilter) &&
+    (assigneeFilter === '' || task.assignee === assigneeFilter) &&
+    (lowerSearchTerm === '' || matchesSearch)
+  );
+});
 
   const sortedTasks = [...filteredTasks].sort((a, b) => {
     const dateA = new Date(a.createdAt);
@@ -66,9 +82,6 @@ export default function Dashboard() {
     return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
   });
 
-  const typeOptions = ['Task', 'Bug'];
-  const priorityOptions = ['High', 'Medium', 'Low'];
-  const statusOptions = ['Active','Close'];
 
   return (
     <>
@@ -76,15 +89,31 @@ export default function Dashboard() {
      <div className="p-4 m-14">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-lg font-bold">Developer Workspace</h1>
-        <button
-        onClick={() => {
-            setEditingTask(null);
-            setIsModalOpen(true);
-        }}
-        className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-        >
-        + Add
-        </button>
+        <div className="flex justify-between items-center mb-4">
+        <div className="flex gap-2">
+             <button
+            onClick={() => setIsAnalyticsOpen(true)}
+            className="p-2 bg-white border border-gray-300 rounded hover:bg-gray-100"
+            >
+            <BarChart2 size={16} className="text-gray-500" />
+            </button>
+            <SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+            <button
+            onClick={() => {
+                setEditingTask(null);
+                setIsModalOpen(true);
+            }}
+            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+            >
+            + Add
+            </button>
+        </div>
+        </div>
+        <Analytics
+        isOpen={isAnalyticsOpen}
+        onClose={() => setIsAnalyticsOpen(false)}
+        tasks={tasks}
+        />
         <TaskDetail
         isOpen={isTaskDetailsOpen}
         onClose={() => setIsTaskDetailsOpen(false)}
@@ -273,6 +302,7 @@ export default function Dashboard() {
                 </div>
               )}
             </th>
+            <th scope="col" className="px-6 py-3">Time Spent</th>
               <th scope="col" className="px-6 py-3">Action</th>
             </tr>
           </thead>
@@ -324,6 +354,15 @@ export default function Dashboard() {
                   </td>
                   <td className="px-6 py-4">{task.status}</td>
                   <td className="px-6 py-4">{task.assignee}</td>
+                  <td className="px-6 py-4">
+                    {task.status === 'Active' && task.activeStartTime ? (
+                        <RealTimeTimer startTime={task.activeStartTime} />
+                    ) : task.timeSpent ? (
+                        task.timeSpent
+                    ) : (
+                        <Clock size={16} className="inline-block text-gray-500" />
+                    )}
+                    </td>
               <td className="px-6 py-4 text-center relative">
                 <button
                     onClick={() => {

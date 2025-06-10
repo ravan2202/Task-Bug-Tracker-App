@@ -29,7 +29,8 @@ export default function TaskDetail({ isOpen, onClose, task }) {
           <p><strong>Status:</strong> {task.status}</p>
           <p><strong>Assignee:</strong> {task.assignee}</p>
           <p><strong>Created Date:</strong> {task.createdAt}</p>
-          <p><strong>Description:</strong> {task.description || 'N/A'}</p>
+          <p><strong>Time Spent:</strong> {task.timeSpent || '00:00:00'}</p>
+          <p><strong>Description:</strong> {task.description}</p>
         </div>
       </div>
     </div>
