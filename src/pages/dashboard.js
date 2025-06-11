@@ -1,15 +1,15 @@
 import React, { useState,useEffect,useRef } from 'react';
 import Navbar from '@/components/NavBar';
 import { useRouter } from 'next/router';
-import { ChevronDown, Clock } from 'lucide-react';
 import TaskForm from '../components/TaskForm';
 import useTaskStore from '../stores/taskStore';
 import TaskDetail from '@/components/TaskDetail';
 import useOutsideClick from '@/hooks/useOutsideClick';
 import SearchBar from '@/components/SearchBar';
-import RealTimeTimer from '@/components/RealTimeTimer';
 import { BarChart2 } from 'lucide-react';
 import Analytics from '../components/Analytics';
+import Table from '@/components/Table';
+import filterTasks from '@/utils/filter';
 
 export default function Dashboard() {
 
@@ -56,24 +56,14 @@ export default function Dashboard() {
     setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
   };
 
-const filteredTasks = tasks.filter((task) => {
-  const lowerSearchTerm = searchTerm.toLowerCase();
-
-  const matchesSearch =
-    task.title.toLowerCase().includes(lowerSearchTerm) ||
-    (task.description && task.description.toLowerCase().includes(lowerSearchTerm)) ||
-    task.assignee.toLowerCase().includes(lowerSearchTerm) ||
-    task.project.toLowerCase().includes(lowerSearchTerm) ||
-    task.id.toString().includes(lowerSearchTerm); // 🟩 handle numeric fields
-
-  return (
-    (priorityFilter === '' || task.priority === priorityFilter) &&
-    (statusFilter === '' || task.status === statusFilter) &&
-    (typeFilter === '' || task.type === typeFilter) &&
-    (assigneeFilter === '' || task.assignee === assigneeFilter) &&
-    (lowerSearchTerm === '' || matchesSearch)
+  const filteredTasks = filterTasks(
+    tasks,
+    searchTerm,
+    priorityFilter,
+    statusFilter,
+    typeFilter,
+    assigneeFilter
   );
-});
 
   const sortedTasks = [...filteredTasks].sort((a, b) => {
     const dateA = new Date(a.createdAt);
@@ -88,25 +78,25 @@ const filteredTasks = tasks.filter((task) => {
     <Navbar/>
      <div className="p-4 m-14">
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-lg font-bold">Developer Workspace</h1>
+        <h1 className="text-lg font-bold text-violet-600">Developer Workspace</h1>
         <div className="flex justify-between items-center mb-4">
         <div className="flex gap-2">
-             <button
-            onClick={() => setIsAnalyticsOpen(true)}
-            className="p-2 bg-white border border-gray-300 rounded hover:bg-gray-100"
-            >
-            <BarChart2 size={16} className="text-gray-500" />
-            </button>
-            <SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
             <button
-            onClick={() => {
-                setEditingTask(null);
-                setIsModalOpen(true);
-            }}
-            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-            >
-            + Add
-            </button>
+          onClick={() => setIsAnalyticsOpen(true)}
+          className="p-2 bg-white border border-gray-300 rounded hover:bg-gray-100"
+          >
+          <BarChart2 size={16} className="text-gray-500" />
+          </button>
+          <SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+          <button
+          onClick={() => {
+              setEditingTask(null);
+              setIsModalOpen(true);
+          }}
+          className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+          >
+          + Add
+          </button>
         </div>
         </div>
         <Analytics
@@ -125,283 +115,30 @@ const filteredTasks = tasks.filter((task) => {
         editingTask={editingTask} 
         />
       </div>
-      <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
-        <table className="w-full text-sm text-left text-gray-500 bg-white">
-          <thead className="text-xs text-gray-700 uppercase bg-gray-50">
-            <tr>
-              <th scope="col" className="px-6 py-3">Unique ID</th>
-              <th scope="col" className="px-6 py-3">Title</th>
-              <th scope="col" className="px-6 py-3 relative">
-                Type
-                <button
-                    onClick={(e) => {
-                    e.stopPropagation();
-                    setActiveFilter((prev) => (prev === 'type' ? null : 'type'));
-                    }}
-                    className="ml-1 inline-flex items-center text-gray-500 hover:text-gray-800"
-                >
-                    <ChevronDown size={14} />
-                </button>
-                {activeFilter === 'type' && (
-                    <div className="absolute right-0 mt-2 bg-white border border-gray-200 rounded shadow z-10 w-32">
-                    <div
-                        className="p-2 text-sm font-normal cursor-pointer hover:bg-gray-100"
-                        onClick={() => {
-                        setTypeFilter('');
-                        setActiveFilter(null);
-                        }}
-                    >
-                        All
-                    </div>
-                    {typeOptions.map((option) => (
-                        <div
-                        key={option}
-                        className="p-2 text-sm font-normal cursor-pointer hover:bg-gray-100"
-                        onClick={() => {
-                            setTypeFilter(option);
-                            setActiveFilter(null);
-                        }}
-                        >
-                        {option}
-                        </div>
-                    ))}
-                    </div>
-                )}
-              </th>
-
-              <th
-                scope="col"
-                className="px-6 py-3 cursor-pointer"
-                onClick={handleSort}
-              >
-                Created Date {sortOrder === 'asc' ? '▲' : '▼'}
-              </th>
-
-              <th scope="col" className="px-6 py-3 relative">
-                Priority
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setActiveFilter((prev) =>
-                      prev === 'priority' ? null : 'priority'
-                    );
-                  }}
-                  className="ml-1 inline-flex items-center text-gray-500 hover:text-gray-800"
-                >
-                  <ChevronDown size={14} />
-                </button>
-                {activeFilter === 'priority' && (
-                  <div className="absolute right-0 mt-2 bg-white border border-gray-200 rounded shadow z-10 w-32">
-                    <div
-                      className="p-2 text-sm font-normal cursor-pointer hover:bg-gray-100"
-                      onClick={() => {
-                        setPriorityFilter('');
-                        setActiveFilter(null);
-                      }}
-                    >
-                      All
-                    </div>
-                    {priorityOptions.map((option) => {
-                      const lower = option.toLowerCase();
-                      const capitalized = lower.charAt(0).toUpperCase() + lower.slice(1);
-                      return (
-                        <div
-                          key={option}
-                          className="p-2 text-sm font-normal cursor-pointer hover:bg-gray-100"
-                          onClick={() => {
-                            setPriorityFilter(option);
-                            setActiveFilter(null);
-                          }}
-                        >
-                          {capitalized}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </th>
-
-              <th scope="col" className="px-6 py-3 relative">
-                Status
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setActiveFilter((prev) =>
-                      prev === 'status' ? null : 'status'
-                    );
-                  }}
-                  className="ml-1 inline-flex items-center text-gray-500 hover:text-gray-800"
-                >
-                  <ChevronDown size={14} />
-                </button>
-              {activeFilter === 'status' && (
-              <div className="absolute right-0 mt-2 bg-white border border-gray-200 rounded shadow z-10 w-32">
-                <div
-                  className="p-2 text-sm font-normal cursor-pointer hover:bg-gray-100"
-                  onClick={() => {
-                    setStatusFilter('');
-                    setActiveFilter(null);
-                  }}
-                >
-                  All
-                </div>
-                {statusOptions.map((option) => {
-                  const lower = option.toLowerCase();
-                  const capitalized = lower.charAt(0).toUpperCase() + lower.slice(1);
-                  return (
-                    <div
-                      key={option}
-                      className="p-2 text-sm font-normal cursor-pointer hover:bg-gray-100"
-                      onClick={() => {
-                        setStatusFilter(option);
-                        setActiveFilter(null);
-                      }}
-                    >
-                      {capitalized}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-              </th>
-
-            <th scope="col" className="px-6 py-3 relative">
-              Assignee
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setActiveFilter((prev) => (prev === 'assignee' ? null : 'assignee'));
-                }}
-                className="ml-1 inline-flex items-center text-gray-500 hover:text-gray-800"
-              >
-                <ChevronDown size={14} />
-              </button>
-              {activeFilter === 'assignee' && (
-                <div className="absolute right-0 mt-2 bg-white border border-gray-200 rounded shadow z-10 w-32">
-                  <div
-                    className="p-2 text-sm font-normal cursor-pointer hover:bg-gray-100"
-                    onClick={() => {
-                      setAssigneeFilter('');
-                      setActiveFilter(null);
-                    }}
-                  >
-                    All
-                  </div>
-                  {[...new Set(tasks.map((task) => task.assignee))].map((assignee) => (
-                    <div
-                      key={assignee}
-                      className="p-2 text-sm font-normal cursor-pointer hover:bg-gray-100"
-                      onClick={() => {
-                        setAssigneeFilter(assignee);
-                        setActiveFilter(null);
-                      }}
-                    >
-                      {assignee}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </th>
-            <th scope="col" className="px-6 py-3">Time Spent</th>
-              <th scope="col" className="px-6 py-3">Action</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {sortedTasks.length === 0 ? (
-              <tr>
-                <td colSpan="7" className="px-6 py-4 text-center">
-                  No tasks found.
-                </td>
-              </tr>
-            ) : (
-              sortedTasks.map((task, idx) => (
-                <tr
-                  key={task.id}
-                  className={
-                    idx % 2 === 0
-                      ? 'bg-white border-b border-gray-200'
-                      : 'bg-gray-50 border-b border-gray-200'
-                  }
-                >
-                  <th
-                    scope="row"
-                    className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap"
-                  >
-                    {task.id}
-                  </th>
-                  <td
-                    className="px-6 py-4 text-blue-600 cursor-pointer hover:underline"
-                    onClick={() => {
-                        setSelectedTask(task);
-                        setIsTaskDetailsOpen(true);
-                    }}
-                    >
-                    {task.title}
-                    </td>
-                  <td className="px-6 py-4">{task.type}</td>
-                  <td className="px-6 py-4">{task.createdAt}</td>
-                  <td className="px-6 py-4">
-                    <span
-                        className={`inline-block px-2 py-1 rounded-full text-xs font-medium
-                        ${task.priority === 'High' ? 'bg-red-100 text-red-800' :
-                        task.priority === 'Medium' ? 'bg-orange-100 text-orange-800' :
-                        'bg-green-100 text-green-800'}
-                        `}
-                    >
-                        {task.priority}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">{task.status}</td>
-                  <td className="px-6 py-4">{task.assignee}</td>
-                  <td className="px-6 py-4">
-                    {task.status === 'Active' && task.activeStartTime ? (
-                        <RealTimeTimer startTime={task.activeStartTime} />
-                    ) : task.timeSpent ? (
-                        task.timeSpent
-                    ) : (
-                        <Clock size={16} className="inline-block text-gray-500" />
-                    )}
-                    </td>
-              <td className="px-6 py-4 text-center relative">
-                <button
-                    onClick={() => {
-                    setActiveFilter(task.id === activeFilter ? null : task.id);
-                    }}
-                    className="text-gray-500 hover:text-gray-800"
-                >
-                    &#8942;
-                </button>
-                {activeFilter === task.id && (
-                    <div ref={popoverRef} className="absolute right-0 mt-2 bg-white border border-gray-200 rounded shadow z-10 w-28">
-                    <div
-                        className="p-2 text-sm font-normal cursor-pointer hover:bg-gray-100"
-                        onClick={() => {
-                        setEditingTask(task);
-                        setIsModalOpen(true);
-                        setActiveFilter(null);
-                        }}
-                    >
-                        Update
-                    </div>
-                    <div
-                        className="p-2 text-sm font-normal cursor-pointer hover:bg-gray-100"
-                        onClick={() => {
-                        deleteTask(task.id);
-                        setActiveFilter(null);
-                        }}
-                    >
-                        Delete
-                    </div>
-                    </div>
-                )}
-                </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+       <h2 className="text-md font-semibold mb-2 mt-4 text-gray-600">All Tasks</h2>
+        <Table
+        tasks={sortedTasks}
+        sortOrder={sortOrder}
+        handleSort={handleSort}
+        activeFilter={activeFilter}
+        setActiveFilter={setActiveFilter}
+        setTypeFilter={setTypeFilter}
+        typeFilter={typeFilter}
+        typeOptions={typeOptions}
+        setPriorityFilter={setPriorityFilter}
+        priorityFilter={priorityFilter}
+        priorityOptions={priorityOptions}
+        setStatusFilter={setStatusFilter}
+        statusFilter={statusFilter}
+        statusOptions={statusOptions}
+        setAssigneeFilter={setAssigneeFilter}
+        assigneeFilter={assigneeFilter}
+        setSelectedTask={setSelectedTask}
+        setIsTaskDetailsOpen={setIsTaskDetailsOpen}
+        setEditingTask={setEditingTask}
+        setIsModalOpen={setIsModalOpen}
+        deleteTask={deleteTask}
+      />
     </div>
     </>
    

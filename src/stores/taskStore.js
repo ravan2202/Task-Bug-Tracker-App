@@ -13,44 +13,45 @@ const useTaskStore = create((set) => ({
       return { tasks: updatedTasks };
     }),
   updateTask: (updatedTask) =>
-  set((state) => {
-    const updatedTasks = state.tasks.map((task) => {
-      if (task.id === updatedTask.id) {
-        // If moving to Active, store activeStartTime
+    set((state) => {
+      const updatedTasks = state.tasks.map((task) => {
+        if (task.id !== updatedTask.id) return task;
+
+        const newTask = { ...task, ...updatedTask };
+
         if (updatedTask.status === 'Active' && task.status !== 'Active') {
-        updatedTask.activeStartTime = Date.now();
-        updatedTask.closedAt = Date.now();
+          newTask.activeStartTime = Date.now();
         }
 
-        // If moving to Close, calculate timeSpent in HH:MM:SS
         if (updatedTask.status === 'Close' && task.status === 'Active') {
-          const startTime = task.activeStartTime ? task.activeStartTime : Date.now();
+          const startTime = task.activeStartTime || Date.now();
           const diff = Date.now() - startTime;
 
           const hours = Math.floor(diff / (1000 * 60 * 60));
           const minutes = Math.floor((diff / (1000 * 60)) % 60);
           const seconds = Math.floor((diff / 1000) % 60);
 
-          updatedTask.timeSpent = `${hours.toString().padStart(2, '0')}:${minutes
+          newTask.timeSpent = `${hours.toString().padStart(2, '0')}:${minutes
             .toString()
             .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-          updatedTask.activeStartTime = null;
+          newTask.activeStartTime = null;
+          newTask.approval = 'Pending';
         }
-      }
-      return task.id === updatedTask.id ? updatedTask : task;
-    });
 
-    localStorage.setItem('tasks', JSON.stringify(updatedTasks));
-    return { tasks: updatedTasks };
-  }),
+        return newTask;
+      });
+
+      localStorage.setItem('tasks', JSON.stringify(updatedTasks));
+      return { tasks: updatedTasks };
+    }),
   deleteTask: (id) =>
     set((state) => {
       const updatedTasks = state.tasks.filter((task) => task.id !== id);
       localStorage.setItem('tasks', JSON.stringify(updatedTasks));
       return { tasks: updatedTasks };
-    }),
-  projectOptions: ['Project A', 'Project B'],
-  assigneeOptions: ['John Doe', 'Jane Smith', 'Bob Brown'],
+  }),
+  projectOptions: ['Project A', 'Project B', 'Project C', 'Project D', 'Project E'],
+  assigneeOptions: ['Rahul Sharma', 'Priya Verma', 'Amit Kumar', 'Anjali Singh', 'Rohit Gupta'],
   priorityOptions: ['High', 'Medium', 'Low'],
   statusOptions: ['Assigned','Active','Close'],
   typeOptions: ['Task', 'Bug'],

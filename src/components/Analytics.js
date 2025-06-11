@@ -1,4 +1,3 @@
-// src/components/AnalyticsModal.js
 import React from 'react';
 import { Line } from 'react-chartjs-2';
 import { Chart, LineElement, PointElement, LinearScale, CategoryScale, Tooltip, Legend } from 'chart.js';
@@ -11,7 +10,7 @@ export default function AnalyticsModal({ isOpen, onClose, tasks }) {
 
   const computeConcurrentTasks = () => {
     const endDate = new Date();
-    const startDate = subDays(endDate, 6); // last 7 days
+    const startDate = subDays(endDate, 6); 
     const days = eachDayOfInterval({ start: startDate, end: endDate });
 
     return days.map((day) => {

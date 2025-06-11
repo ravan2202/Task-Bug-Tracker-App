@@ -5,13 +5,10 @@ export default function TaskDetail({ isOpen, onClose, task }) {
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50">
-      {/* Background fade */}
       <div
         className="absolute inset-0 bg-black opacity-30"
         onClick={onClose}
       ></div>
-
-      {/* Modal box */}
       <div className="relative bg-white p-6 rounded shadow-md w-96 z-50">
         <button
           onClick={onClose}
