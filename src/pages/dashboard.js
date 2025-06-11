@@ -10,12 +10,13 @@ import { BarChart2 } from 'lucide-react';
 import Analytics from '../components/Analytics';
 import Table from '@/components/Table';
 import filterTasks from '@/utils/filter';
+import mockTasks from '@/utils/mockData';
 
 export default function Dashboard() {
 
   const router = useRouter();
   const { tasks } = useTaskStore();
-  const { setTasks } = useTaskStore();
+  // const { setTasks } = useTaskStore();
   const { deleteTask, typeOptions, priorityOptions, statusOptions } = useTaskStore();
 
   const [sortOrder, setSortOrder] = useState('asc');
@@ -47,6 +48,10 @@ export default function Dashboard() {
         setTasks(JSON.parse(storedTasks));
         }
     }
+    }, []);
+    const { setTasks } = useTaskStore();
+    useEffect(() => {
+      setTasks(mockTasks);
     }, []);
 
     const popoverRef = useRef();
