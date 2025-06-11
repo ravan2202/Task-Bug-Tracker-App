@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Clock, CheckCircle, Undo2 } from 'lucide-react';
+import { Clock, CheckCircle, Undo2, Edit, Trash  } from 'lucide-react';
 import useOutsideClick from '@/hooks/useOutsideClick';
 import RealTimeTimer from './RealTimeTimer';
 import { FilterButton, FilterMenu, toggleFilter } from '../utils/helper';
@@ -145,53 +145,39 @@ export default function Table({
                   )}
                 </td>
                 {!hideActions && (
-                  <td className="px-6 py-4 text-center relative">
-                    {handleApprove && handlePushBack && task.approval === 'Pending' ? (
-                      <div className="flex justify-between items-center px-2">
-                        <button onClick={() => handleApprove(task.id)} className="text-green-600 hover:text-green-800">
-                          <CheckCircle size={16} />
-                        </button>
-                        <button onClick={() => handlePushBack(task.id)} className="text-orange-600 hover:text-orange-800">
-                          <Undo2 size={16} />
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => setActiveFilter(activeFilter === task.id ? null : task.id)}
-                          className="text-gray-500 hover:text-gray-800"
-                        >
-                          &#8942;
-                        </button>
-                        {activeFilter === task.id && (
-                          <div
-                            className="absolute right-0 mt-2 bg-white border border-gray-200 rounded shadow z-10 w-28"
-                          >
-                            <div
-                              className="p-2 text-sm cursor-pointer hover:bg-gray-100"
-                              onClick={() => {
-                                setEditingTask(task);
-                                setIsModalOpen(true);
-                                setActiveFilter(null);
-                              }}
-                            >
-                              Update
-                            </div>
-                            <div
-                              className="p-2 text-sm cursor-pointer hover:bg-gray-100"
-                              onClick={() => {
-                                deleteTask(task.id);
-                                setActiveFilter(null);
-                              }}
-                            >
-                              Delete
-                            </div>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </td>
-                )}
+                <td className="px-6 py-4 text-center">
+                  {handleApprove && handlePushBack && task.approval === 'Pending' ? (
+                    <div className="flex justify-between items-center px-2">
+                      <button onClick={() => handleApprove(task.id)} className="text-green-600 hover:text-green-800">
+                        <CheckCircle size={16} />
+                      </button>
+                      <button onClick={() => handlePushBack(task.id)} className="text-orange-600 hover:text-orange-800">
+                        <Undo2 size={16} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between items-center px-2">
+                      <button
+                        onClick={() => {
+                          setEditingTask(task);
+                          setIsModalOpen(true);
+                        }}
+                        className="text-indigo-600 hover:text-indigo-800"
+                        title="Edit"
+                      >
+                        <Edit size={16} />
+                      </button>
+                      <button
+                        onClick={() => deleteTask(task.id)}
+                        className="text-red-600 hover:text-red-800"
+                        title="Delete"
+                      >
+                        <Trash size={16} />
+                      </button>
+                    </div>
+                  )}
+                </td>
+              )}
               </tr>
             ))
           )}

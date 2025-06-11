@@ -64,7 +64,7 @@ export default function Admin() {
   const handlePushBack = (taskId) => {
     const task = tasks.find((t) => t.id === taskId);
     if (task) {
-      const updatedTask = { ...task, approval: 'Pushback', status: 'Active' };
+      const updatedTask = { ...task, approval: 'Pushback', status: 'Re-Open' };
       updateTask(updatedTask);
     }
   };

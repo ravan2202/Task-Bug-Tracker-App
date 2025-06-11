@@ -8,28 +8,28 @@ Chart.register(LineElement, PointElement, LinearScale, CategoryScale, Tooltip, L
 export default function AnalyticsModal({ isOpen, onClose, tasks }) {
   if (!isOpen) return null;
 
-  const computeConcurrentTasks = () => {
-    const endDate = new Date();
-    const startDate = subDays(endDate, 6); 
-    const days = eachDayOfInterval({ start: startDate, end: endDate });
+const computeConcurrentTasks = () => {
+  const endDate = new Date();
+  const startDate = subDays(endDate, 6);
+  const days = eachDayOfInterval({ start: startDate, end: endDate });
 
-    return days.map((day) => {
-      const dayStart = day.setHours(0, 0, 0, 0);
-      const dayEnd = day.setHours(23, 59, 59, 999);
+  return days.map((day) => {
+    const dayStart = day.setHours(0, 0, 0, 0);
+    const dayEnd = day.setHours(23, 59, 59, 999);
 
-      const count = tasks.filter((task) => {
-        const activeStart = task.activeStartTime || new Date(task.createdAt).getTime();
-        const closedAt = task.closedAt || Date.now();
+    const count = tasks.filter((task) => {
+      const activeStart = task.activeStartTime;
+      const closedAt = task.closedAt || Date.now();
+      if (!activeStart) return false;
+      return activeStart <= dayEnd && closedAt >= dayStart;
+    }).length;
 
-        return activeStart <= dayEnd && closedAt >= dayStart;
-      }).length;
-
-      return {
-        date: format(day, 'MM-dd'),
-        count,
-      };
-    });
-  };
+    return {
+      date: format(day, 'MM-dd'),
+      count,
+    };
+  });
+};
 
   const data = computeConcurrentTasks();
 

@@ -20,23 +20,23 @@ const useTaskStore = create((set) => ({
         const newTask = { ...task, ...updatedTask };
 
         if (updatedTask.status === 'Active' && task.status !== 'Active') {
-          newTask.activeStartTime = Date.now();
+           newTask.activeStartTime = new Date(updatedTask.createdAt).getTime();
+          newTask.closedAt = null; 
         }
+         if (updatedTask.status === 'Close' && task.status === 'Active') {
+        newTask.closedAt = Date.now();
+        const startTime = task.activeStartTime || Date.now();
+        const diff = Date.now() - startTime;
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff / (1000 * 60)) % 60);
+        const seconds = Math.floor((diff / 1000) % 60);
 
-        if (updatedTask.status === 'Close' && task.status === 'Active') {
-          const startTime = task.activeStartTime || Date.now();
-          const diff = Date.now() - startTime;
-
-          const hours = Math.floor(diff / (1000 * 60 * 60));
-          const minutes = Math.floor((diff / (1000 * 60)) % 60);
-          const seconds = Math.floor((diff / 1000) % 60);
-
-          newTask.timeSpent = `${hours.toString().padStart(2, '0')}:${minutes
-            .toString()
-            .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-          newTask.activeStartTime = null;
-          newTask.approval = 'Pending';
-        }
+        newTask.timeSpent = `${hours.toString().padStart(2, '0')}:${minutes
+          .toString()
+          .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        newTask.activeStartTime = null; 
+        newTask.approval = 'Pending';
+      }
 
         return newTask;
       });
@@ -53,7 +53,7 @@ const useTaskStore = create((set) => ({
   projectOptions: ['Project A', 'Project B', 'Project C', 'Project D', 'Project E'],
   assigneeOptions: ['Rahul Sharma', 'Priya Verma', 'Amit Kumar', 'Anjali Singh', 'Rohit Gupta'],
   priorityOptions: ['High', 'Medium', 'Low'],
-  statusOptions: ['Assigned','Active','Close'],
+  statusOptions: ['Assigned','Active','Close','Re-Open'],
   typeOptions: ['Task', 'Bug'],
 }));
 

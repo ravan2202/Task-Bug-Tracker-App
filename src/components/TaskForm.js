@@ -8,7 +8,6 @@ export default function TaskForm({ isOpen, onClose, editingTask }) {
     projectOptions,
     assigneeOptions,
     priorityOptions,
-    statusOptions,
     typeOptions,
   } = useTaskStore();
 
@@ -20,6 +19,7 @@ export default function TaskForm({ isOpen, onClose, editingTask }) {
   const [status, setStatus] = useState('');
   const [type, setType] = useState('');
   const [createdDate, setCreatedDate] = useState('');
+  const statusOptions = ['Assigned', 'Active', 'Close'];
 
   useEffect(() => {
     if (editingTask) {
